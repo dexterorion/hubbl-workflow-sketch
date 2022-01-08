@@ -8,9 +8,9 @@ import (
 var (
 	starters = map[string]WfStartParameters{
 		"task-assignment": {
-			Wf: StartTaskAssignment,
+			Wf: StartTaskAssignmentWorkflow,
 			Parameters: []interface{}{
-				models.Story{}, models.TaskPlanTemplate{}, []models.StoryAssignment{},
+				&models.Story{}, &models.TaskPlanTemplate{}, []*models.StoryAssignment{},
 			},
 		},
 	}
@@ -27,5 +27,6 @@ func GetStarterWorkflow(wfname string) (WfStartParameters, bool) {
 }
 
 func RegisterWorkflows(w worker.Worker) {
-	w.RegisterWorkflow(StartTaskAssignment)
+	w.RegisterWorkflow(StartTaskAssignmentWorkflow)
+	w.RegisterWorkflow(ConstructTaskPlanWorkflow)
 }

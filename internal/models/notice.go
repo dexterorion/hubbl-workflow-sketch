@@ -4,5 +4,5 @@ type Notice struct {
 }
 
 type NoticeSet struct {
-	Actions []Action
+	Actions []*Action
 }

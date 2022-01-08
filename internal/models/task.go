@@ -7,23 +7,23 @@ type Task struct {
 }
 
 type TaskAssignment struct {
-	Task Task
+	Task *Task
 }
 
 type TaskPlanTemplate struct {
 	OwnerRole        string
 	Fields           []string
 	CompletionPeriod time.Duration
-	Stages           []TaskStage
+	Stages           []*TaskStage
 }
 
 type TaskStage struct {
 	AcceptedPeriod time.Duration
-	Roles          []Role
+	Roles          []*Role
 	Automatable    bool
 }
 
 type TaskPlan struct {
 	CreatedAt        time.Time
-	StoryAssignments []StoryAssignment
+	StoryAssignments []*StoryAssignment
 }

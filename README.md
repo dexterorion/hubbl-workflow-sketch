@@ -98,6 +98,8 @@ After that, just go to a web-browser on `localhost:8088`.
 
 ## Running the workflow
 
+### Create a namespace
+
 The first step to run the workflow locally, is to start the worker. Since we are using `minikube` to instantiate all `Temporal` features, we need to expose one the services called `frontend`.
 
 
@@ -109,8 +111,21 @@ To do that, we can simply run
 $ kubectl port-forward services/temporaltest-frontend-headless 7233:7233
 ```
 
-You need to create a namespace (if you didn't do yet) to use with `Temporal`. You can achieve this doing the following:
+You need to create a namespace (if you didn't do yet) to use with `Temporal`. You can achieve this by doing the following:
 
 - connect to the admintools: `$ kubectl exec -it services/temporaltest-admintools /bin/bash`
 - register the namespace: `tctl namespace register default`
 
+### Running the worker
+
+```
+$ go run main.go -action=worker
+```
+
+### Running workflows
+
+```
+$ go run main.go -action=trigger -wfname=task-assignment
+```
+
+We just have implemented `task-assignment` workflow so far.

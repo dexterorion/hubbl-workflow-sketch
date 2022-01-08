@@ -5,7 +5,7 @@ type Story struct {
 }
 
 type StoryAssignment struct {
-	Story Story
-	User  User
-	Roles []Role
+	Story *Story
+	User  *User
+	Roles []*Role
 }
