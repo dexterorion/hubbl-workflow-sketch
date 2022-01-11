@@ -1,7 +1,44 @@
 package activities
 
-import "go.temporal.io/sdk/worker"
+import (
+	"context"
+	"math/rand"
+	"time"
+
+	"github.com/dexterorion/hubbl-workflow-sketch/internal/models"
+	"github.com/google/uuid"
+	"go.temporal.io/sdk/activity"
+	"go.temporal.io/sdk/worker"
+)
 
 func RegisterActivities(w worker.Worker) {
-	// w.RegisterActivity(ConstructTaskPlanActivity)
+	w.RegisterActivity(FindUsersMatchingRoles)
+	w.RegisterActivity(IsTaskAutomatable)
+}
+
+func FindUsersMatchingRoles(ctx context.Context, roles []*models.Role) (users []*models.User, err error) {
+	activity.GetLogger(ctx).Debug("Finding users matching roles", "roles", roles)
+
+	users = []*models.User{
+		{
+			Email:    "fake01@hubbl.ai",
+			Username: "fake01",
+		},
+		{
+			Email:    "fake02@hubbl.ai",
+			Username: "fake02",
+		},
+	}
+
+	return
+}
+
+func IsTaskAutomatable(ctx context.Context, taskPlanId, taskStageId uuid.UUID) (automatable bool, err error) {
+	activity.GetLogger(ctx).Debug("Checking if task is automatable by this stage", "taskPlanId", taskPlanId, "taskStageId", taskStageId)
+
+	// randomizing
+	rand.Seed(int64(time.Now().UnixNano()))
+	automatable = rand.Intn(2) == 1
+
+	return
 }

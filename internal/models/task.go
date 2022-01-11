@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Task struct {
 	Name string
@@ -11,6 +15,7 @@ type TaskAssignment struct {
 }
 
 type TaskPlanTemplate struct {
+	TaskPlanId       uuid.UUID
 	OwnerRole        string
 	Fields           []string
 	CompletionPeriod time.Duration
@@ -18,6 +23,7 @@ type TaskPlanTemplate struct {
 }
 
 type TaskStage struct {
+	TaskStageId    uuid.UUID
 	AcceptedPeriod time.Duration
 	Roles          []*Role
 	Automatable    bool

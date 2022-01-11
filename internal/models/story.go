@@ -6,6 +6,6 @@ type Story struct {
 
 type StoryAssignment struct {
 	Story *Story
-	User  *User
+	User  []*User
 	Roles []*Role
 }
