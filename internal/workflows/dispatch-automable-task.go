@@ -26,8 +26,7 @@ func DispatchAutomatableTask(ctx workflow.Context, storyAssignment *models.Story
 	// because it might be an external task which will signal the
 	// flow when it is done
 
-	internalCh := make(chan error)
-
+	doneCh := workflow.NewChannel(ctx)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		wfID := workflow.GetInfo(ctx).WorkflowExecution.ID
 		runID := workflow.GetInfo(ctx).WorkflowExecution.RunID
@@ -44,14 +43,14 @@ func DispatchAutomatableTask(ctx workflow.Context, storyAssignment *models.Story
 
 		if err := workflow.ExecuteActivity(ctx, activities.SendMessageToTopic, "externaltopic", message).Get(ctx, nil); err != nil {
 			// if it fails, signal with error
-			internalCh <- err
+			doneCh.Send(ctx, err)
 		} else {
-			internalCh <- nil
+			doneCh.Send(ctx, nil)
 		}
 	})
 
 	// waits to see if workflow.Go worked fine
-	err = <-internalCh
+	doneCh.Receive(ctx, &err)
 	if err != nil {
 		return
 	}

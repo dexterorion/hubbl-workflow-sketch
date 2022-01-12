@@ -129,3 +129,9 @@ $ go run main.go -action=trigger -wfname=task-assignment
 ```
 
 We just have implemented `task-assignment` workflow so far.
+
+### Signaling running workflow
+
+```
+$ go run main.go -action=signal -workflowID=<workflow-id> -runID=<run-id> -signalName=<signal-name> -signalValue=<signal-value>
+```

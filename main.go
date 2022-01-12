@@ -11,22 +11,38 @@ import (
 var (
 	action string
 	wfname string
+
+	signalName  string
+	signalValue string
+	workflowID  string
+	runID       string
 )
 
 func init() {
-	flag.StringVar(&action, "action", "worker", "Action type: worker | trigger")
+	flag.StringVar(&action, "action", "worker", "Action type: worker | trigger | signal")
 	flag.StringVar(&wfname, "wfname", "task-assignment", "If -action=trigger should have valid wfname")
+
+	// for signal purposes
+	flag.StringVar(&signalName, "signalName", "DispatchAutomatableTaskCompletion", "Signal name to be sent")
+	flag.StringVar(&signalValue, "signalValue", "Some value", "Signal value to be sent")
+	flag.StringVar(&workflowID, "workflowID", "", "Workflow to signal")
+	flag.StringVar(&runID, "runID", "", "Workflow run to signal")
 
 	flag.Parse()
 }
 
 func main() {
-	if action != "worker" && action != "trigger" {
+	if action != "worker" && action != "trigger" && action != "signal" {
 		log.Fatal("action must be `worker` or `trigger`")
 	}
 
 	if action == "trigger" && wfname == "" {
 		log.Fatal("when -action=trigger some `wfname` should be sent")
+	}
+
+	if action == "signal" &&
+		(signalName == "" || signalValue == "" || workflowID == "" || runID == "") {
+		log.Fatal("wrong parameters for signaling")
 	}
 
 	// The client and worker are heavyweight objects that should be created once per process.
@@ -37,10 +53,13 @@ func main() {
 		log.Fatalln("Unable to create client", err)
 	}
 
-	if action == "worker" {
+	switch action {
+	case "worker":
 		internal.StartWorker(c)
-	} else {
+	case "trigger":
 		internal.TriggerWorkflow(c, wfname)
+	case "signal":
+		internal.SignalWorkflow(c, workflowID, runID, signalName, signalValue)
 	}
 
 	defer c.Close()
