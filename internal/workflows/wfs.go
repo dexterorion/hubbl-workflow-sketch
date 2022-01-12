@@ -1,7 +1,10 @@
 package workflows
 
 import (
+	"time"
+
 	"github.com/dexterorion/hubbl-workflow-sketch/internal/models"
+	"github.com/google/uuid"
 	"go.temporal.io/sdk/worker"
 )
 
@@ -10,7 +13,18 @@ var (
 		"task-assignment": {
 			Wf: StartTaskAssignmentWorkflow,
 			Parameters: []interface{}{
-				&models.Story{}, &models.TaskPlanTemplate{}, []*models.StoryAssignment{},
+				&models.Story{}, &models.TaskPlanTemplate{
+					TaskPlanId:       uuid.New(),
+					CompletionPeriod: 24 * time.Hour,
+					Stages: []*models.TaskStage{
+						{
+							TaskStageId:    uuid.New(),
+							Automatable:    true,
+							AcceptedPeriod: 6 * time.Hour,
+							Roles:          []*models.Role{},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -29,4 +43,7 @@ func GetStarterWorkflow(wfname string) (WfStartParameters, bool) {
 func RegisterWorkflows(w worker.Worker) {
 	w.RegisterWorkflow(StartTaskAssignmentWorkflow)
 	w.RegisterWorkflow(ConstructTaskPlanWorkflow)
+	w.RegisterWorkflow(CleanupAndFlush)
+	w.RegisterWorkflow(DispatchAutomatableTask)
+	w.RegisterWorkflow(ExecuteTaskPlan)
 }

@@ -14,6 +14,10 @@ import (
 func RegisterActivities(w worker.Worker) {
 	w.RegisterActivity(FindUsersMatchingRoles)
 	w.RegisterActivity(IsTaskAutomatable)
+	w.RegisterActivity(CleanDatabase)
+	w.RegisterActivity(FLushLogs)
+	w.RegisterActivity(ReleaseConn)
+	w.RegisterActivity(SendMessageToTopic)
 }
 
 func FindUsersMatchingRoles(ctx context.Context, roles []*models.Role) (users []*models.User, err error) {
@@ -40,5 +44,25 @@ func IsTaskAutomatable(ctx context.Context, taskPlanId, taskStageId uuid.UUID) (
 	rand.Seed(int64(time.Now().UnixNano()))
 	automatable = rand.Intn(2) == 1
 
+	return
+}
+
+func CleanDatabase(ctx context.Context) (err error) {
+	// implement me
+	return
+}
+
+func FLushLogs(ctx context.Context) (err error) {
+	// implement me
+	return
+}
+
+func ReleaseConn(ctx context.Context) (err error) {
+	// implement me
+	return
+}
+
+func SendMessageToTopic(ctx context.Context, topic string, message interface{}) (err error) {
+	// some message queue or api call
 	return
 }

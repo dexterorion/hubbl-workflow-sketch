@@ -7,11 +7,13 @@ import (
 )
 
 type Task struct {
-	Name string
+	TaskId uuid.UUID
+	Name   string
 }
 
 type TaskAssignment struct {
 	Task *Task
+	User *User
 }
 
 type TaskPlanTemplate struct {
