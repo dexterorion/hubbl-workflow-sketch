@@ -48,12 +48,18 @@ func NotifyAndWaitAcceptance(ctx workflow.Context, noticeSet *models.NoticeSet, 
 				s := workflow.NewSelector(ctx)
 
 				var signalVal string
-				signalChan := workflow.GetSignalChannel(ctx, DispatchAutomatableSignal)
+				acceptedChan := workflow.GetSignalChannel(ctx, DispatchUserAcceptedSignal)
+				declinedChan := workflow.GetSignalChannel(ctx, DispatchUserRefusedSignal)
 
-				s.AddReceive(signalChan, func(c workflow.ReceiveChannel, more bool) {
+				s.AddReceive(acceptedChan, func(c workflow.ReceiveChannel, more bool) {
 					c.Receive(ctx, &signalVal)
 
-					logger.Debug("Automated task done. Proceeding...")
+					logger.Debug("User accepted task...", "email", user.Email)
+				})
+				s.AddReceive(declinedChan, func(c workflow.ReceiveChannel, more bool) {
+					c.Receive(ctx, &signalVal)
+
+					logger.Debug("User refused task...", "email", user.Email)
 				})
 				s.Select(ctx) // waits here
 			}
