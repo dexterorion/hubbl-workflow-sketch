@@ -18,6 +18,8 @@ func RegisterActivities(w worker.Worker) {
 	w.RegisterActivity(FLushLogs)
 	w.RegisterActivity(ReleaseConn)
 	w.RegisterActivity(SendMessageToTopic)
+	w.RegisterActivity(CreateNotice)
+	w.RegisterActivity(NotifyTaskAssignment)
 }
 
 func FindUsersMatchingRoles(ctx context.Context, roles []*models.Role) (users []*models.User, err error) {
@@ -70,5 +72,25 @@ func ReleaseConn(ctx context.Context) (err error) {
 
 func SendMessageToTopic(ctx context.Context, topic string, message interface{}) (err error) {
 	// some message queue or api call
+	return
+}
+
+func CreateNotice(ctx context.Context, noticeSet *models.NoticeSet, user *models.User, acceptPeriod time.Duration) (notice *models.Notice, err error) {
+	// it might do way more than that. call external api to check user's deadline
+
+	deadline := time.Now().Add(acceptPeriod)
+
+	notice = &models.Notice{
+		User:      user,
+		NoticeSet: noticeSet,
+		Deadline:  deadline,
+	}
+
+	return
+}
+
+func NotifyTaskAssignment(ctx context.Context, notice *models.Notice, workflowID, runID string) (err error) {
+	// send email, whatsapp, notification to phone etc
+
 	return
 }

@@ -46,4 +46,5 @@ func RegisterWorkflows(w worker.Worker) {
 	w.RegisterWorkflow(CleanupAndFlush)
 	w.RegisterWorkflow(DispatchAutomatableTask)
 	w.RegisterWorkflow(ExecuteTaskPlan)
+	w.RegisterWorkflow(NotifyAndWaitAcceptance)
 }

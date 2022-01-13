@@ -22,7 +22,9 @@ func StartTaskAssignmentWorkflow(ctx workflow.Context, story *models.Story, temp
 	// it should assign story, or trigger the automation and wait
 	// it will also handle notifications
 	// i am doing this in order to make more readable and state safer
-	if err = workflow.ExecuteChildWorkflow(ctx, ExecuteTaskPlan, taskPlan).Get(ctx, nil); err != nil {
+
+	notificationsSent := []*models.Notice{}
+	if err = workflow.ExecuteChildWorkflow(ctx, ExecuteTaskPlan, taskPlan).Get(ctx, &notificationsSent); err != nil {
 		return
 	}
 
