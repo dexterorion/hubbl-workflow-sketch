@@ -6,8 +6,7 @@ import (
 )
 
 const (
-	AcceptedSignal = "AcceptedSignal"
-	RefusedSignal  = "RefusedSignal"
+	UserNoticeSignal = "UserNoticeSignal"
 
 	DispatchUserAcceptedSignal      = "DispatchUserAcceptedSignal"
 	DispatchUserRefusedSignal       = "DispatchUserRefusedSignal"
@@ -23,6 +22,7 @@ func ExecuteTaskPlan(ctx workflow.Context, taskPlan *models.TaskPlan) (notificat
 		Actions: []*models.Action{}, // bla bla a bunch of actions
 	}
 
+	waitacceptance := &WaitAcceptanceResult{}
 	notificationsMemory = []*models.Notice{}
 
 	for _, storyAssignment := range taskPlan.StoryAssignments {
@@ -31,13 +31,12 @@ func ExecuteTaskPlan(ctx workflow.Context, taskPlan *models.TaskPlan) (notificat
 			return
 		} else {
 			// should be done by some user
-			notifications := []*models.Notice{}
 
-			if err = workflow.ExecuteChildWorkflow(ctx, NotifyAndWaitAcceptance, noticeSet, storyAssignment).Get(ctx, &notifications); err != nil {
+			if err = workflow.ExecuteChildWorkflow(ctx, NotifyAndWaitAcceptance, noticeSet, storyAssignment).Get(ctx, waitacceptance); err != nil {
 				return
 			}
 
-			notificationsMemory = append(notificationsMemory, notifications...)
+			notificationsMemory = append(notificationsMemory, waitacceptance.GeneratedNotifications...)
 		}
 	}
 

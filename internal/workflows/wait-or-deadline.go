@@ -10,7 +10,7 @@ import (
 
 func WaitOrDeadline(ctx workflow.Context, notice *models.Notice, parentWfID, parentRunID string) (err error) {
 	logger := workflow.GetLogger(ctx)
-	logger.Debug("Starting WaitOrDeadline workflow...", "user", notice.User.Email)
+	logger.Debug("Starting WaitOrDeadline workflow...", "user", notice.User.Email, "parentWfID", parentWfID, "parentRunID", parentRunID)
 	defer logger.Debug("Finishing WaitOrDeadline workflow...", "user", notice.User.Email)
 
 	ao := workflow.ActivityOptions{
@@ -21,6 +21,10 @@ func WaitOrDeadline(ctx workflow.Context, notice *models.Notice, parentWfID, par
 	wg := workflow.NewWaitGroup(ctx)
 	wg.Add(1)
 
+	signalArg := &UserSignalNotice{
+		Notice: notice,
+	}
+
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		s := workflow.NewSelector(ctx)
 		acceptedChan := workflow.GetSignalChannel(ctx, DispatchUserAcceptedSignal)
@@ -29,7 +33,8 @@ func WaitOrDeadline(ctx workflow.Context, notice *models.Notice, parentWfID, par
 		s.AddReceive(acceptedChan, func(c workflow.ReceiveChannel, more bool) {
 			logger.Debug("User accepted", "notice", notice)
 
-			workflow.SignalExternalWorkflow(ctx, parentWfID, parentRunID, AcceptedSignal, notice)
+			signalArg.Accepted = true
+			err = workflow.SignalExternalWorkflow(ctx, parentWfID, parentRunID, UserNoticeSignal, signalArg).Get(ctx, nil)
 
 			wg.Done()
 		})
@@ -37,7 +42,7 @@ func WaitOrDeadline(ctx workflow.Context, notice *models.Notice, parentWfID, par
 		s.AddReceive(declinedChan, func(c workflow.ReceiveChannel, more bool) {
 			logger.Debug("User denied", "notice", notice)
 
-			workflow.SignalExternalWorkflow(ctx, parentWfID, parentRunID, RefusedSignal, notice)
+			err = workflow.SignalExternalWorkflow(ctx, parentWfID, parentRunID, UserNoticeSignal, signalArg).Get(ctx, nil)
 
 			wg.Done()
 		})
@@ -52,7 +57,9 @@ func WaitOrDeadline(ctx workflow.Context, notice *models.Notice, parentWfID, par
 
 			workflow.Sleep(ctx, duration) // waits needed time
 
-			workflow.SignalExternalWorkflow(ctx, parentWfID, parentRunID, RefusedSignal, notice)
+			logger.Debug("User denied with timeout", "notice", notice)
+
+			err = workflow.SignalExternalWorkflow(ctx, parentWfID, parentRunID, UserNoticeSignal, signalArg).Get(ctx, nil)
 
 			wg.Done()
 		}

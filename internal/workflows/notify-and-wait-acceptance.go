@@ -13,6 +13,11 @@ type WaitAcceptanceResult struct {
 	GeneratedNotifications []*models.Notice
 }
 
+type UserSignalNotice struct {
+	Accepted bool
+	Notice   *models.Notice
+}
+
 func NotifyAndWaitAcceptance(ctx workflow.Context, noticeSet *models.NoticeSet, storyAssignment *models.StoryAssignment) (result *WaitAcceptanceResult, err error) {
 	logger := workflow.GetLogger(ctx)
 	logger.Debug("Starting NotifyAndWaitExecution workflow...")
@@ -64,31 +69,6 @@ func NotifyAndWaitAcceptance(ctx workflow.Context, noticeSet *models.NoticeSet, 
 	parentWfID := workflow.GetInfo(ctx).WorkflowExecution.ID
 	parentRunID := workflow.GetInfo(ctx).WorkflowExecution.RunID
 
-	var signalVal *models.Notice
-	acceptedChan := workflow.GetSignalChannel(ctx, AcceptedSignal)
-	declinedChan := workflow.GetSignalChannel(ctx, RefusedSignal)
-
-	s.AddReceive(acceptedChan, func(c workflow.ReceiveChannel, more bool) {
-		c.Receive(ctx, &signalVal)
-
-		logger.Debug("User accepted task...", "email", signalVal.User.Email)
-
-		result.Acceptance = signalVal
-	})
-
-	s.AddReceive(declinedChan, func(c workflow.ReceiveChannel, more bool) {
-		for {
-			c.Receive(ctx, &signalVal)
-			logger.Debug("User refused task...", "email", signalVal.User.Email)
-
-			receivedDeny++
-			if receivedDeny == total {
-				// all waiting is done. can proceed to next stage
-				return
-			}
-		}
-	})
-
 	for _, user := range storyAssignment.Users {
 
 		notice := &models.Notice{}
@@ -107,6 +87,28 @@ func NotifyAndWaitAcceptance(ctx workflow.Context, noticeSet *models.NoticeSet, 
 			}
 		})
 	}
+
+	var signalVal *UserSignalNotice
+	userNoticeChan := workflow.GetSignalChannel(ctx, UserNoticeSignal)
+
+	s.AddReceive(userNoticeChan, func(c workflow.ReceiveChannel, more bool) {
+		for {
+			c.Receive(ctx, &signalVal)
+			logger.Debug("User updated task notice...", "email", signalVal.Notice.User.Email)
+
+			if !signalVal.Accepted {
+				receivedDeny++
+				if receivedDeny == total {
+					// all waiting is done. can proceed to next stage
+					return
+				}
+			} else {
+				result.Acceptance = signalVal.Notice
+				return
+			}
+
+		}
+	})
 
 	s.Select(ctx) // waits here
 
