@@ -44,7 +44,8 @@ func IsTaskAutomatable(ctx context.Context, taskPlanId, taskStageId uuid.UUID) (
 
 	// randomizing
 	rand.Seed(int64(time.Now().UnixNano()))
-	automatable = rand.Intn(2) == 1
+	// automatable = rand.Intn(2) == 1
+	automatable = false
 
 	if automatable {
 		activity.GetLogger(ctx).Debug("Task automable", "taskPlanId", taskPlanId, "taskStageId", taskStageId)

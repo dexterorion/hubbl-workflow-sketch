@@ -8,7 +8,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func NotifyAndWaitAcceptance(ctx workflow.Context, noticeSet *models.NoticeSet, storyAssignment *models.StoryAssignment) (notifications []*models.Notice, err error) {
+type WaitAcceptanceResult struct {
+	Acceptance             *models.Notice
+	GeneratedNotifications []*models.Notice
+}
+
+func NotifyAndWaitAcceptance(ctx workflow.Context, noticeSet *models.NoticeSet, storyAssignment *models.StoryAssignment) (result *WaitAcceptanceResult, err error) {
 	logger := workflow.GetLogger(ctx)
 	logger.Debug("Starting NotifyAndWaitExecution workflow...")
 	defer logger.Debug("Finishing NotifyAndWaitExecution workflow...")
@@ -18,7 +23,8 @@ func NotifyAndWaitAcceptance(ctx workflow.Context, noticeSet *models.NoticeSet, 
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	notifications = make([]*models.Notice, 0)
+	result = &WaitAcceptanceResult{}
+	result.GeneratedNotifications = make([]*models.Notice, 0)
 
 	total := len(storyAssignment.Users)
 	receivedDeny := 0
@@ -55,20 +61,19 @@ func NotifyAndWaitAcceptance(ctx workflow.Context, noticeSet *models.NoticeSet, 
 
 	*/
 
+	parentWfID := workflow.GetInfo(ctx).WorkflowExecution.ID
+	parentRunID := workflow.GetInfo(ctx).WorkflowExecution.RunID
+
 	var signalVal *models.Notice
 	acceptedChan := workflow.GetSignalChannel(ctx, AcceptedSignal)
 	declinedChan := workflow.GetSignalChannel(ctx, RefusedSignal)
-
-	result := make(chan *models.Notice, 1)
 
 	s.AddReceive(acceptedChan, func(c workflow.ReceiveChannel, more bool) {
 		c.Receive(ctx, &signalVal)
 
 		logger.Debug("User accepted task...", "email", signalVal.User.Email)
 
-		// received ack, continues and kills children workflows
-		result <- signalVal
-
+		result.Acceptance = signalVal
 	})
 
 	s.AddReceive(declinedChan, func(c workflow.ReceiveChannel, more bool) {
@@ -79,7 +84,7 @@ func NotifyAndWaitAcceptance(ctx workflow.Context, noticeSet *models.NoticeSet, 
 			receivedDeny++
 			if receivedDeny == total {
 				// all waiting is done. can proceed to next stage
-				result <- nil
+				return
 			}
 		}
 	})
@@ -92,11 +97,12 @@ func NotifyAndWaitAcceptance(ctx workflow.Context, noticeSet *models.NoticeSet, 
 			return
 		}
 
-		notifications = append(notifications, notice)
+		result.GeneratedNotifications = append(result.GeneratedNotifications, notice)
 
 		// async call
 		workflow.Go(ctx, func(ctx workflow.Context) {
-			if err = workflow.ExecuteChildWorkflow(ctx, WaitOrDeadline, notice, acceptedChan, declinedChan).Get(ctx, nil); err != nil {
+			logger.Debug("Starting golang routine for WaitOrDeadline", "notice", notice)
+			if err = workflow.ExecuteChildWorkflow(ctx, WaitOrDeadline, notice, parentWfID, parentRunID).Get(ctx, nil); err != nil {
 				return
 			}
 		})

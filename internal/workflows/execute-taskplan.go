@@ -27,9 +27,8 @@ func ExecuteTaskPlan(ctx workflow.Context, taskPlan *models.TaskPlan) (notificat
 
 	for _, storyAssignment := range taskPlan.StoryAssignments {
 		if storyAssignment.Automatable {
-			if err = workflow.ExecuteChildWorkflow(ctx, DispatchAutomatableTask).Get(ctx, nil); err != nil {
-				return
-			}
+			err = workflow.ExecuteChildWorkflow(ctx, DispatchAutomatableTask).Get(ctx, nil)
+			return
 		} else {
 			// should be done by some user
 			notifications := []*models.Notice{}
