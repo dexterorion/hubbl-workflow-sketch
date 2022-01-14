@@ -20,7 +20,69 @@ func NotifyAndWaitAcceptance(ctx workflow.Context, noticeSet *models.NoticeSet, 
 
 	notifications = make([]*models.Notice, 0)
 
-	wg := workflow.NewWaitGroup(ctx)
+	total := len(storyAssignment.Users)
+	receivedDeny := 0
+
+	s := workflow.NewSelector(ctx)
+
+	/*
+
+		workflow principal
+		    - pra cada user, dispara um workflow filho
+
+		    - espera por
+		        para cada channel recebido
+		            - se alguem aceitou:
+		                - retorna usuario que aceitou
+		            - se alguem na aceitou:
+		                total de signais == ao maximo esperado?
+		                    - sim: retorna que ninguem aceitou
+		                    - nao: continua
+
+		workflow filho
+		    - envia mensagem pro usuario
+
+		    - routine 1:
+		        - espera por
+		            sinal recebido de aceitacao?
+		                - envia channel de aceitacao
+		            sinal recebido de declinio?
+		                - envia channel de declinio
+
+		    - routine 2:
+		        - espera por deadline
+		            - envia channel de declinio
+
+	*/
+
+	var signalVal *models.Notice
+	acceptedChan := workflow.GetSignalChannel(ctx, AcceptedSignal)
+	declinedChan := workflow.GetSignalChannel(ctx, RefusedSignal)
+
+	result := make(chan *models.Notice, 1)
+
+	s.AddReceive(acceptedChan, func(c workflow.ReceiveChannel, more bool) {
+		c.Receive(ctx, &signalVal)
+
+		logger.Debug("User accepted task...", "email", signalVal.User.Email)
+
+		// received ack, continues and kills children workflows
+		result <- signalVal
+
+	})
+
+	s.AddReceive(declinedChan, func(c workflow.ReceiveChannel, more bool) {
+		for {
+			c.Receive(ctx, &signalVal)
+			logger.Debug("User refused task...", "email", signalVal.User.Email)
+
+			receivedDeny++
+			if receivedDeny == total {
+				// all waiting is done. can proceed to next stage
+				result <- nil
+			}
+		}
+	})
 
 	for _, user := range storyAssignment.Users {
 
@@ -32,50 +94,15 @@ func NotifyAndWaitAcceptance(ctx workflow.Context, noticeSet *models.NoticeSet, 
 
 		notifications = append(notifications, notice)
 
-		wg.Add(1)
 		// async call
 		workflow.Go(ctx, func(ctx workflow.Context) {
-			wfID := workflow.GetInfo(ctx).WorkflowExecution.ID
-			runID := workflow.GetInfo(ctx).WorkflowExecution.RunID
-			// send message to user and wait for deadline
-			if err = workflow.ExecuteActivity(ctx, activities.NotifyTaskAssignment, notice, wfID, runID).Get(ctx, nil); err != nil {
+			if err = workflow.ExecuteChildWorkflow(ctx, WaitOrDeadline, notice, acceptedChan, declinedChan).Get(ctx, nil); err != nil {
 				return
 			}
-
-			// or wait for signal
-			{
-				// build signal
-				s := workflow.NewSelector(ctx)
-
-				var signalVal string
-				acceptedChan := workflow.GetSignalChannel(ctx, DispatchUserAcceptedSignal)
-				declinedChan := workflow.GetSignalChannel(ctx, DispatchUserRefusedSignal)
-
-				s.AddReceive(acceptedChan, func(c workflow.ReceiveChannel, more bool) {
-					c.Receive(ctx, &signalVal)
-
-					logger.Debug("User accepted task...", "email", user.Email)
-				})
-				s.AddReceive(declinedChan, func(c workflow.ReceiveChannel, more bool) {
-					c.Receive(ctx, &signalVal)
-
-					logger.Debug("User refused task...", "email", user.Email)
-				})
-				s.Select(ctx) // waits here
-			}
-			// or wait for duration
-			{
-				now := time.Now()
-				duration := notice.Deadline.Sub(now)
-
-				<-time.After(duration)
-			}
-			wg.Done()
 		})
 	}
 
-	// wait for signal or all above deadline are done
-	wg.Wait(ctx)
+	s.Select(ctx) // waits here
 
 	return
 }

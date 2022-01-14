@@ -47,4 +47,5 @@ func RegisterWorkflows(w worker.Worker) {
 	w.RegisterWorkflow(DispatchAutomatableTask)
 	w.RegisterWorkflow(ExecuteTaskPlan)
 	w.RegisterWorkflow(NotifyAndWaitAcceptance)
+	w.RegisterWorkflow(WaitOrDeadline)
 }

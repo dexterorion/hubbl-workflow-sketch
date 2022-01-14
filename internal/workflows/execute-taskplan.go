@@ -6,6 +6,9 @@ import (
 )
 
 const (
+	AcceptedSignal = "AcceptedSignal"
+	RefusedSignal  = "RefusedSignal"
+
 	DispatchUserAcceptedSignal      = "DispatchUserAcceptedSignal"
 	DispatchUserRefusedSignal       = "DispatchUserRefusedSignal"
 	DispatchUserCompletedTaskSignal = "DispatchUserCompletedTaskSignal"
