@@ -8,19 +8,7 @@ import (
 	"github.com/dexterorion/hubbl-workflow-sketch/internal/models"
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/activity"
-	"go.temporal.io/sdk/worker"
 )
-
-func RegisterActivities(w worker.Worker) {
-	w.RegisterActivity(FindUsersMatchingRoles)
-	w.RegisterActivity(IsTaskAutomatable)
-	w.RegisterActivity(CleanDatabase)
-	w.RegisterActivity(FLushLogs)
-	w.RegisterActivity(ReleaseConn)
-	w.RegisterActivity(SendMessageToTopic)
-	w.RegisterActivity(CreateNotice)
-	w.RegisterActivity(NotifyTaskAssignment)
-}
 
 func FindUsersMatchingRoles(ctx context.Context, roles []*models.Role) (users []*models.User, err error) {
 	activity.GetLogger(ctx).Debug("Finding users matching roles", "roles", roles)
