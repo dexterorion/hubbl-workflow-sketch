@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/dexterorion/hubbl-workflow-sketch/internal/models"
+	"github.com/dexterorion/hubbl-workflow-sketch/internal/workflows/offerassignment"
+	"github.com/dexterorion/hubbl-workflow-sketch/internal/workflows/taskassignment"
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/worker"
 )
@@ -11,7 +13,7 @@ import (
 var (
 	starters = map[string]WfStartParameters{
 		"task-assignment": {
-			Wf: StartTaskAssignmentWorkflow,
+			Wf: taskassignment.StartTaskAssignmentWorkflow,
 			Parameters: []interface{}{
 				&models.Story{}, &models.TaskPlanTemplate{
 					TaskPlanId:       uuid.New(),
@@ -27,6 +29,10 @@ var (
 				},
 			},
 		},
+		"offer-assignment": {
+			Wf:         offerassignment.StartOfferAssignmentWorkflow,
+			Parameters: []interface{}{},
+		},
 	}
 )
 
@@ -41,11 +47,6 @@ func GetStarterWorkflow(wfname string) (WfStartParameters, bool) {
 }
 
 func RegisterWorkflows(w worker.Worker) {
-	w.RegisterWorkflow(StartTaskAssignmentWorkflow)
-	w.RegisterWorkflow(ConstructTaskPlanWorkflow)
-	w.RegisterWorkflow(CleanupAndFlush)
-	w.RegisterWorkflow(DispatchAutomatableTask)
-	w.RegisterWorkflow(ExecuteTaskPlan)
-	w.RegisterWorkflow(NotifyAndWaitAcceptance)
-	w.RegisterWorkflow(WaitOrDeadline)
+	taskassignment.RegisterWorkflows(w)
+	offerassignment.RegisterWorkflows(w)
 }

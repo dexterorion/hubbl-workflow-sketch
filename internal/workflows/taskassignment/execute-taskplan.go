@@ -1,4 +1,4 @@
-package workflows
+package taskassignment
 
 import (
 	"github.com/dexterorion/hubbl-workflow-sketch/internal/models"
