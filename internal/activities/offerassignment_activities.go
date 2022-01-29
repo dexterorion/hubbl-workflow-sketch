@@ -47,3 +47,25 @@ func EvaluateExternalSystem(ctx context.Context) (result bool, err error) {
 
 	return
 }
+
+func DecideExternalSystem(ctx context.Context) (result bool, err error) {
+	activity.GetLogger(ctx).Debug("DecideExternalSystem automation")
+
+	// randomizing
+	rand.Seed(int64(time.Now().UnixNano()))
+	result = rand.Intn(2) == 1
+
+	return
+}
+
+func NotifySuccess(ctx context.Context) (err error) {
+	activity.GetLogger(ctx).Debug("Notify success")
+
+	return
+}
+
+func NotifyFail(ctx context.Context) (err error) {
+	activity.GetLogger(ctx).Debug("Notify fail")
+
+	return
+}

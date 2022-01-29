@@ -1,11 +1,20 @@
 package offerassignment
 
-import "go.temporal.io/sdk/workflow"
+import (
+	"time"
+
+	"go.temporal.io/sdk/workflow"
+)
 
 func StartOfferAssignmentWorkflow(ctx workflow.Context) (err error) {
 	logger := workflow.GetLogger(ctx)
 	logger.Debug("Starting StartOfferAssignmentWorkflow...")
 	defer logger.Debug("Ending StartOfferAssignmentWorkflow...")
+
+	ao := workflow.ActivityOptions{
+		StartToCloseTimeout: 1 * time.Hour,
+	}
+	ctx = workflow.WithActivityOptions(ctx, ao)
 
 	automationResponse := "succeded"
 	if err = workflow.ExecuteChildWorkflow(ctx, AutomationWorkflow).Get(ctx, &automationResponse); err != nil {
@@ -14,11 +23,20 @@ func StartOfferAssignmentWorkflow(ctx workflow.Context) (err error) {
 
 	if automationResponse != "succeded" {
 		// starts external system workflow
-		if err = workflow.ExecuteChildWorkflow(ctx, ExternalSystemWorkflow).Get(ctx, &automationResponse); err != nil {
+		externalDidTheJob := "yes"
+		if err = workflow.ExecuteChildWorkflow(ctx, ExternalSystemWorkflow).Get(ctx, &externalDidTheJob); err != nil {
 			return
 		}
-	} else {
-		logger.Debug("OfferAssignmentWorkflow was finished succeded...")
+
+		if externalDidTheJob != "yes" {
+			if err = workflow.ExecuteChildWorkflow(ctx, AssignmentWorkflow).Get(ctx, &externalDidTheJob); err != nil {
+				return
+			}
+		}
+	}
+
+	if err = workflow.ExecuteChildWorkflow(ctx, CompletionWorkflow, automationResponse).Get(ctx, nil); err != nil {
+		return
 	}
 
 	return

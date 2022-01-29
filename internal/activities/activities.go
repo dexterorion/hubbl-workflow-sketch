@@ -18,4 +18,7 @@ func RegisterActivities(w worker.Worker) {
 	w.RegisterActivity(DecidesAutomation)
 	w.RegisterActivity(AutomateAutomation)
 	w.RegisterActivity(EvaluateExternalSystem)
+	w.RegisterActivity(DecideExternalSystem)
+	w.RegisterActivity(NotifySuccess)
+	w.RegisterActivity(NotifyFail)
 }
