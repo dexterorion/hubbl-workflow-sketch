@@ -21,4 +21,7 @@ func RegisterActivities(w worker.Worker) {
 	w.RegisterActivity(DecideExternalSystem)
 	w.RegisterActivity(NotifySuccess)
 	w.RegisterActivity(NotifyFail)
+	w.RegisterActivity(SendOfferToUsers)
+	w.RegisterActivity(OwnerWillDoTheTask)
+	w.RegisterActivity(OwnerAssignToSomeone)
 }

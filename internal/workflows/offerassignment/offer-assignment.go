@@ -23,13 +23,13 @@ func StartOfferAssignmentWorkflow(ctx workflow.Context) (err error) {
 
 	if automationResponse != "succeded" {
 		// starts external system workflow
-		externalDidTheJob := "yes"
-		if err = workflow.ExecuteChildWorkflow(ctx, ExternalSystemWorkflow).Get(ctx, &externalDidTheJob); err != nil {
+		externalWillDoTheJob := "yes"
+		if err = workflow.ExecuteChildWorkflow(ctx, ExternalSystemWorkflow).Get(ctx, &externalWillDoTheJob); err != nil {
 			return
 		}
 
-		if externalDidTheJob != "yes" {
-			if err = workflow.ExecuteChildWorkflow(ctx, AssignmentWorkflow).Get(ctx, &externalDidTheJob); err != nil {
+		if externalWillDoTheJob != "yes" {
+			if err = workflow.ExecuteChildWorkflow(ctx, AssignmentWorkflow).Get(ctx, &externalWillDoTheJob); err != nil {
 				return
 			}
 		}

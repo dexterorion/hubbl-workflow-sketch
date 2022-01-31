@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	EzxecutedSignal = "ExecutedSignal"
+	ExecutedSignal = "ExecutedSignal"
 )
 
 func CompletionWorkflow(ctx workflow.Context, automationResponse string) (err error) {
@@ -30,7 +30,7 @@ func CompletionWorkflow(ctx workflow.Context, automationResponse string) (err er
 
 		workflow.Go(ctx, func(ctx workflow.Context) {
 			s := workflow.NewSelector(ctx)
-			executedChan := workflow.GetSignalChannel(ctx, EzxecutedSignal)
+			executedChan := workflow.GetSignalChannel(ctx, ExecutedSignal)
 
 			s.AddReceive(executedChan, func(c workflow.ReceiveChannel, more bool) {
 				logger.Debug("User executed")
