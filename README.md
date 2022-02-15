@@ -128,7 +128,7 @@ $ go run main.go -action=worker
 $ go run main.go -action=trigger -wfname=task-assignment
 ```
 
-We just have implemented `task-assignment` workflow so far.
+We have implemented `task-assignment`, `offer-assignment` and `shipmentwf`.
 
 ### Signaling running workflow
 
