@@ -5,6 +5,7 @@ import (
 
 	"github.com/dexterorion/hubbl-workflow-sketch/internal/models"
 	"github.com/dexterorion/hubbl-workflow-sketch/internal/workflows/offerassignment"
+	"github.com/dexterorion/hubbl-workflow-sketch/internal/workflows/shipmentwf"
 	"github.com/dexterorion/hubbl-workflow-sketch/internal/workflows/taskassignment"
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/worker"
@@ -33,6 +34,10 @@ var (
 			Wf:         offerassignment.StartOfferAssignmentWorkflow,
 			Parameters: []interface{}{},
 		},
+		"shipmentwf": {
+			Wf:         shipmentwf.RunShpWf,
+			Parameters: []interface{}{},
+		},
 	}
 )
 
@@ -49,4 +54,5 @@ func GetStarterWorkflow(wfname string) (WfStartParameters, bool) {
 func RegisterWorkflows(w worker.Worker) {
 	taskassignment.RegisterWorkflows(w)
 	offerassignment.RegisterWorkflows(w)
+	shipmentwf.RegisterWorkflows(w)
 }
