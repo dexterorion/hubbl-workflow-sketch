@@ -23,6 +23,8 @@ func RunShpWf(ctx workflow.Context) (err error) {
 	eventHistory := []string{}
 	currentEvent := ""
 
+	eventDataHistory := map[string]interface{}{}
+
 	if err = workflow.ExecuteChildWorkflow(ctx, ActivateStoryWf).Get(ctx, nil); err != nil {
 		return
 	}
@@ -78,12 +80,24 @@ func RunShpWf(ctx workflow.Context) (err error) {
 
 		stateHistory = append(stateHistory, currentState)
 		eventHistory = append(eventHistory, currentEvent)
+
+		eventDataHistory[currentEvent] = map[string]interface{}{
+			"MBOL/MAWB #":       "",
+			"Vessel/voyage IDS": []string{},
+			"ETA/ETD":           "",
+		}
 	}
 
 	if currentEvent == "BKJ" {
 		if err = workflow.ExecuteChildWorkflow(ctx, FinishShpWf, currentEvent).Get(ctx, nil); err != nil {
 			return
 		}
+	}
+
+	// start tracking
+
+	for {
+
 	}
 
 	return
